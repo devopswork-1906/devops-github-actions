@@ -1,0 +1,3 @@
+region = "us-east-2"
+bucket = "abc-s3"
+key = "dev.tfstate"
