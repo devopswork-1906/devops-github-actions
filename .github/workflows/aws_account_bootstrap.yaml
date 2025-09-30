@@ -17,7 +17,7 @@ on:
       region:
         description: 'AWS Region'
         required: true
-        default: 'ap-south-1'
+        default: 'eu-west-1'
       role_arn:
         description: 'IAM Role ARN for GitHub OIDC'
         required: true
@@ -53,10 +53,11 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan \
-          -var="environment=${{ github.event.inputs.environment }}" \
-          -var="application=${{ github.event.inputs.application }}" \
-          -var="aws_region=${{ github.event.inputs.region }}"
+        run: |
+          terraform plan \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var="application=${{ github.event.inputs.application }}" \
+            -var="aws_region=${{ github.event.inputs.region }}"
 
   terraform-apply:
     name: Terraform Apply
@@ -87,7 +88,8 @@ jobs:
         run: terraform init
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve \
-          -var="environment=${{ github.event.inputs.environment }}" \
-          -var="application=${{ github.event.inputs.application }}" \
-          -var="aws_region=${{ github.event.inputs.region }}"
+        run: |
+          terraform apply -auto-approve \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var="application=${{ github.event.inputs.application }}" \
+            -var="aws_region=${{ github.event.inputs.region }}"
