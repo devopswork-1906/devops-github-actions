@@ -69,7 +69,8 @@ jobs:
     permissions:
       id-token: write
       contents: read
-
+    env:
+      TF_DIR: infra/terraform/bootstrap
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
