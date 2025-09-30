@@ -30,7 +30,8 @@ jobs:
     permissions:
       id-token: write
       contents: read
-
+    env:
+      TF_DIR: infra/terraform/bootstrap
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -47,14 +48,14 @@ jobs:
           terraform_version: ">= 1.8.0"
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform -chdir=$TF_DIR init
 
       - name: Terraform Validate
-        run: terraform validate
+        run: terraform -chdir=$TF_DIR validate
 
       - name: Terraform Plan
         run: |
-          terraform plan \
+          terraform -chdir=$TF_DIR plan \
             -var="environment=${{ github.event.inputs.environment }}" \
             -var="application=${{ github.event.inputs.application }}" \
             -var="aws_region=${{ github.event.inputs.region }}"
@@ -85,11 +86,11 @@ jobs:
           terraform_version: ">= 1.8.0"
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform -chdir=$TF_DIR init
 
       - name: Terraform Apply
         run: |
-          terraform apply -auto-approve \
+          terraform -chdir=$TF_DIR apply -auto-approve \
             -var="environment=${{ github.event.inputs.environment }}" \
             -var="application=${{ github.event.inputs.application }}" \
             -var="aws_region=${{ github.event.inputs.region }}"
