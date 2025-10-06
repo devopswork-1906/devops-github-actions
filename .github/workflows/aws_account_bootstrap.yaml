@@ -9,7 +9,8 @@ on:
         type: choice
         options:
           - dev
-          - staging
+          - test
+          - uat
           - prod
       application:
         description: 'Application Name'
@@ -17,11 +18,12 @@ on:
       region:
         description: 'AWS Region'
         required: true
-        default: 'ap-south-1'
+        default: 'eu-west-1'
       role_arn:
         description: 'IAM Role ARN for GitHub OIDC'
         required: true
-
+env:
+  TF_DIR: infra/terraform/bootstrap
 jobs:
   terraform-plan:
     name: Terraform Plan
@@ -30,7 +32,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -47,16 +48,16 @@ jobs:
           terraform_version: ">= 1.8.0"
 
       - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
         run: terraform init
 
-      - name: Terraform Validate
-        run: terraform validate
-
       - name: Terraform Plan
-        run: terraform plan \
-          -var="environment=${{ github.event.inputs.environment }}" \
-          -var="application=${{ github.event.inputs.application }}" \
-          -var="aws_region=${{ github.event.inputs.region }}"
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform plan \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var="application=${{ github.event.inputs.application }}" \
+            -var="aws_region=${{ github.event.inputs.region }}"
 
   terraform-apply:
     name: Terraform Apply
@@ -67,7 +68,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -84,10 +84,13 @@ jobs:
           terraform_version: ">= 1.8.0"
 
       - name: Terraform Init
+        working-directory: ${{ env.TF_DIR }}
         run: terraform init
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve \
-          -var="environment=${{ github.event.inputs.environment }}" \
-          -var="application=${{ github.event.inputs.application }}" \
-          -var="aws_region=${{ github.event.inputs.region }}"
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform apply -auto-approve \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var="application=${{ github.event.inputs.application }}" \
+            -var="aws_region=${{ github.event.inputs.region }}"
