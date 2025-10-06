@@ -1,5 +1,6 @@
 name: AWS Account Bootstrap Dispatcher
-
+permissions:
+  contents: read
 on:
   workflow_dispatch:
     inputs:
@@ -22,8 +23,8 @@ on:
         default: "eu-west-1"
 
 jobs:
-  call-bootstrap:
-    name: Run AWS Account Bootstrap Reusable Workflow
+  print-input-summary:
+    name: Print User Input Summary
     runs-on: ubuntu-latest
     steps:
       - name: Print Input Details
@@ -40,10 +41,13 @@ jobs:
           echo "Run ID      : ${{ github.run_id }}"
           echo "Run Number  : ${{ github.run_number }}"
           echo "----------------------------------------"
-          
-      - name: Call Reusable Workflow
-        uses: ./.github/workflows/terraform-aws-account-bootstrap-reusable.yml
-        with:
-          environment: ${{ github.event.inputs.environment }}
-          application: ${{ github.event.inputs.application }}
-          region: ${{ github.event.inputs.region }}
+  
+  # Calling the reusable workflow for bootstrap
+  call-bootstrap:
+    name: Run AWS Account Bootstrap Reusable Workflow
+    needs: print-input-summary
+    uses: ./.github/workflows/terraform-aws-account-bootstrap-reusable.yml
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      application: ${{ github.event.inputs.application }}
+      region: ${{ github.event.inputs.region }}
