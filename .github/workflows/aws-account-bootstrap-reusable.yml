@@ -1,0 +1,103 @@
+name: AWS Account Bootstrap (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      application:
+        required: true
+        type: string
+      region:
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+# Workflow-level defaults
+defaults:
+  run:
+    shell: bash
+    working-directory: infra/terraform/bootstrap
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan for (${{ inputs.environment }}) Environment
+    runs-on: ubuntu-latest
+    environment: ims_${{ inputs.environment }}  # Github Repository environment to use environment specific variable
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC Token
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.ACCOUNT_ID }}:role/${{ vars.OIDC_ROLE }}
+          aws-region: ${{ inputs.region }}
+
+      - name: Setup Terraform on Github runner
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ">= 1.8.0"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var="environment=${{ inputs.environment }}" \
+            -var="application=${{ inputs.application }}" \
+            -var="aws_region=${{ inputs.region }}" 
+
+  # Approval for terraform apply
+  terraform-apply-approval-gate:
+    name: Approval Gate (terraform apply) for (${{ inputs.environment }}) environment
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment == 'prod' && 'prod-deployment-approval' || 'non-prod-deployment-approval' }}
+    steps:
+      - name: Approval Confirmation
+        run: echo "Terraform Apply approval granted for '${{ inputs.environment }}' environment."
+
+  # Terraform Apply
+  terraform-apply:
+    name: Terraform Apply (${{ inputs.environment }})
+    needs: terraform-apply-approval-gate
+    runs-on: ubuntu-latest
+    environment: ims_dev
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC Token
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.ACCOUNT_ID }}:role/${{ vars.OIDC_ROLE }}
+          aws-region: ${{ inputs.region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ">= 1.8.0"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: |
+          terraform apply -auto-approve \
+            -var="environment=${{ inputs.environment }}" \
+            -var="application=${{ inputs.application }}" \
+            -var="aws_region=${{ inputs.region }}"
+
+      - name: Post Apply Summary
+        if: success()
+        run: |
+          echo "Terraform apply completed successfully for '${{ inputs.environment }}' environment."

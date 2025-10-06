@@ -8,8 +8,10 @@ on:
         required: true
         type: choice
         options:
+          - sandbox
           - dev
-          - staging
+          - test
+          - uat
           - prod
       application:
         description: 'Application Name'
@@ -17,57 +19,83 @@ on:
       region:
         description: 'AWS Region'
         required: true
-        default: 'ap-south-1'
+        default: 'eu-west-1'
       role_arn:
         description: 'IAM Role ARN for GitHub OIDC'
         required: true
 
+permissions:
+  id-token: write
+  contents: read
+defaults:
+  run:
+    shell: bash
 jobs:
+  # Terraform init/plan stage
   terraform-plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
-
-    permissions:
-      id-token: write
-      contents: read
-
     steps:
+      - name: Print Input Details
+        run: |
+          echo "----------------------------------------"
+          echo "Input Summary"
+          echo "----------------------------------------"
+          echo "Environment : ${{ github.event.inputs.environment }}"
+          echo "Application : ${{ github.event.inputs.application }}"
+          echo "Region      : ${{ github.event.inputs.region }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Workflow    : ${{ github.workflow }}"
+          echo "Repository  : ${{ github.repository }}"
+          echo "Run ID      : ${{ github.run_id }}"
+          echo "Run Number  : ${{ github.run_number }}"
+          echo "----------------------------------------"
+      
       - name: Checkout Repository
         uses: actions/checkout@v4
-
+      
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ github.event.inputs.role_arn }}
           aws-region: ${{ github.event.inputs.region }}
-
+      
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ">= 1.8.0"
-
+      
       - name: Terraform Init
+        working-directory: infra/terraform/bootstrap
         run: terraform init
-
+      
       - name: Terraform Validate
+        working-directory: infra/terraform/bootstrap
         run: terraform validate
-
+      
       - name: Terraform Plan
-        run: terraform plan \
-          -var="environment=${{ github.event.inputs.environment }}" \
-          -var="application=${{ github.event.inputs.application }}" \
-          -var="aws_region=${{ github.event.inputs.region }}"
+        working-directory: infra/terraform/bootstrap
+        run: |
+          terraform plan \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var="application=${{ github.event.inputs.application }}" \
+            -var="aws_region=${{ github.event.inputs.region }}"
+  
+  # Approval for terraform apply
+  terraform-apply-approval-gate:
+    name: Approval Gate (terraform apply) for (${{ github.event.inputs.environment }}) environment
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment == 'prod' && 'prod-deployment-approval' || 'non-prod-deployment-approval' }}
+    steps:
+      - name: Approval Confirmation
+        run: echo "Terraform Apply approval granted for '${{ github.event.inputs.environment }}' environment."
 
+# Terraform apply stage
   terraform-apply:
     name: Terraform Apply
     runs-on: ubuntu-latest
-    needs: terraform-plan
-    environment: terraform-approval   # must create this environment in GitHub with required reviewers
-
-    permissions:
-      id-token: write
-      contents: read
-
+    needs: terraform-apply-approval-gate
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -77,17 +105,19 @@ jobs:
         with:
           role-to-assume: ${{ github.event.inputs.role_arn }}
           aws-region: ${{ github.event.inputs.region }}
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ">= 1.8.0"
-
+      
       - name: Terraform Init
+        working-directory: infra/terraform/bootstrap
         run: terraform init
-
+      
       - name: Terraform Apply
-        run: terraform apply -auto-approve \
-          -var="environment=${{ github.event.inputs.environment }}" \
-          -var="application=${{ github.event.inputs.application }}" \
-          -var="aws_region=${{ github.event.inputs.region }}"
+        working-directory: infra/terraform/bootstrap
+        run: |
+          terraform apply -auto-approve \
+            -var="environment=${{ github.event.inputs.environment }}" \
+            -var="application=${{ github.event.inputs.application }}" \
+            -var="aws_region=${{ github.event.inputs.region }}"
