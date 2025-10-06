@@ -71,7 +71,7 @@ jobs:
     name: Terraform Apply (${{ inputs.environment }})
     needs: terraform-apply-approval-gate
     runs-on: ubuntu-latest
-    environment: ims_${{ inputs.environment }}
+    environment: ims_dev
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
