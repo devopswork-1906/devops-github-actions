@@ -61,7 +61,7 @@ jobs:
     name: Approval Gate (terraform apply) for (${{ inputs.environment }}) environment
     needs: terraform-plan
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment == 'prod' && 'prod-approval' || 'non-prod-approval' }}
+    environment: ${{ inputs.environment == 'prod' && 'prod-deployment-approval' || 'non-prod-deployment-approval' }}
     steps:
       - name: Approval Confirmation
         run: echo "Terraform Apply approval granted for '${{ inputs.environment }}' environment."

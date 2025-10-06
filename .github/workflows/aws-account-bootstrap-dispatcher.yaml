@@ -26,6 +26,21 @@ jobs:
     name: Run AWS Account Bootstrap Reusable Workflow
     runs-on: ubuntu-latest
     steps:
+      - name: Print Input Details
+        run: |
+          echo "----------------------------------------"
+          echo "Input Summary"
+          echo "----------------------------------------"
+          echo "Environment : ${{ github.event.inputs.environment }}"
+          echo "Application : ${{ github.event.inputs.application }}"
+          echo "Region      : ${{ github.event.inputs.region }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Workflow    : ${{ github.workflow }}"
+          echo "Repository  : ${{ github.repository }}"
+          echo "Run ID      : ${{ github.run_id }}"
+          echo "Run Number  : ${{ github.run_number }}"
+          echo "----------------------------------------"
+          
       - name: Call Reusable Workflow
         uses: ./.github/workflows/terraform-aws-account-bootstrap-reusable.yml
         with:
