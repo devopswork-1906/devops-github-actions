@@ -1,0 +1,34 @@
+name: AWS Account Bootstrap Dispatcher
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Select Environment"
+        required: true
+        type: choice
+        options:
+          - sandbox
+          - dev
+          - test
+          - uat
+          - prod
+      application:
+        description: "Application Name"
+        required: true
+      region:
+        description: "AWS Region"
+        required: true
+        default: "eu-west-1"
+
+jobs:
+  call-bootstrap:
+    name: Run AWS Account Bootstrap Reusable Workflow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Reusable Workflow
+        uses: ./.github/workflows/terraform-aws-account-bootstrap-reusable.yml
+        with:
+          environment: ${{ github.event.inputs.environment }}
+          application: ${{ github.event.inputs.application }}
+          region: ${{ github.event.inputs.region }}
