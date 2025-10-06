@@ -20,16 +20,35 @@ on:
         description: 'AWS Region'
         required: true
         default: 'eu-west-1'
-env:
-  TF_DIR: infra/terraform/bootstrap
+
+permissions:
+  id-token: write
+  contents: read
+defaults:
+  run:
+    shell: bash
+    working-directory: infra/terraform/bootstrap
 jobs:
   terraform-plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
+    environment: ims_dev
     steps:
+      - name: Print Input Details
+        run: |
+          echo "----------------------------------------"
+          echo "Input Summary"
+          echo "----------------------------------------"
+          echo "Environment : ${{ github.event.inputs.environment }}"
+          echo "Application : ${{ github.event.inputs.application }}"
+          echo "Region      : ${{ github.event.inputs.region }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Workflow    : ${{ github.workflow }}"
+          echo "Repository  : ${{ github.repository }}"
+          echo "Run ID      : ${{ github.run_id }}"
+          echo "Run Number  : ${{ github.run_number }}"
+          echo "----------------------------------------"
+      
       - name: Checkout Repository
         uses: actions/checkout@v4
       - name: Configure AWS Credentials
@@ -42,25 +61,33 @@ jobs:
         with:
           terraform_version: ">= 1.8.0"
       - name: Terraform Init
-        working-directory: ${{ env.TF_DIR }}
         run: terraform init
 
+      - name: Terraform Validate
+        run: terraform validate
+
       - name: Terraform Plan
-        working-directory: ${{ env.TF_DIR }}
         run: |
           terraform plan \
             -var="environment=${{ github.event.inputs.environment }}" \
             -var="application=${{ github.event.inputs.application }}" \
             -var="aws_region=${{ github.event.inputs.region }}"
+  
+  # Approval for terraform apply
+  terraform-apply-approval-gate:
+    name: Approval Gate (terraform apply) for (${{ github.event.inputs.environment }}) environment
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment == 'prod' && 'prod-approval' || 'non-prod-approval' }}
+    steps:
+      - name: Approval Confirmation
+        run: echo "Terraform Apply approval granted for '${{ github.event.inputs.environment }}' environment."
 
   terraform-apply:
     name: Terraform Apply
     runs-on: ubuntu-latest
-    needs: terraform-plan
-    environment: terraform-approval   # must create this environment in GitHub with required reviewers
-    permissions:
-      id-token: write
-      contents: read
+    needs: terraform-apply-approval-gate
+    environment: ims_dev
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -75,10 +102,8 @@ jobs:
         with:
           terraform_version: ">= 1.8.0"
       - name: Terraform Init
-        working-directory: ${{ env.TF_DIR }}
         run: terraform init
       - name: Terraform Apply
-        working-directory: ${{ env.TF_DIR }}
         run: |
           terraform apply -auto-approve \
             -var="environment=${{ github.event.inputs.environment }}" \
