@@ -17,15 +17,11 @@ permissions:
   id-token: write
   contents: read
 
-# Global environment variables
-env:
-  TF_DIR: infra/terraform/bootstrap
-
 # Workflow-level defaults
 defaults:
   run:
     shell: bash
-    working-directory: ${{ env.TF_DIR }}
+    working-directory: infra/terraform/bootstrap
 
 jobs:
   terraform-plan:
