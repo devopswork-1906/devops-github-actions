@@ -47,13 +47,12 @@ jobs:
           echo "Run ID      : ${{ github.run_id }}"
           echo "Run Number  : ${{ github.run_number }}"
           echo "----------------------------------------"
-      
       - name: Checkout Repository
         uses: actions/checkout@v4
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.OIDC_ROLE }}
+          role-to-assume: arn:aws:iam::${{ vars.ACCOUNT_ID }}:role/${{ vars.OIDC_ROLE }}
           aws-region: ${{ github.event.inputs.region }}
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
