@@ -3,17 +3,16 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">~ 5.74.0"
+      version = "~> 5.74.0"
     }
   }
-  backend "s3" {
-    encrypt        = "true"
-    use_lockfile = true
-  }
+  # backend "s3" {
+  #   encrypt = "true"
+  # }
 }
 
 provider "aws" {
-  region = var.region
+  region              = var.region
   allowed_account_ids = var.aws_account_id
 }
 

@@ -1,4 +1,4 @@
-# Terraform Module: EC2 Auto Scaling Group
+# Terraform Module : tf-aws-module-asg (EC2 Auto Scaling Group)
 
 ## Table of Contents
 
@@ -47,8 +47,7 @@ This Terraform module creates and manages an Amazon EC2 Auto Scaling Group (ASG)
 
 ```hcl
 module "asg" {
-  source = "../../../tf-aws-module-asg"
-
+  source = "../../"
   #AutoScalingGroup
   name                      = var.autoscaling_group_name
   min_size                  = 1
@@ -82,7 +81,6 @@ module "asg" {
       max_size              = 2
     }
   }
-
   instance_refresh = {
     strategy = "Rolling"
     preferences = {
@@ -96,7 +94,7 @@ module "asg" {
       standby_instances            = "Ignore"
       skip_matching                = false
     }
-    triggers = ["launch_template"]
+    #triggers = ["launch_template"]
   }
   scaling_policies = {
     target-cpu-50 = {
@@ -162,6 +160,23 @@ module "asg" {
   tags                 = var.tags["common_tags"]
   launch_template_tags = var.tags["launch_template_tags"]
   autoscaling_group_tags = var.tags["asg_tags"]
+}
+
+# Cloud watch Alarm for scale-out policy
+resource "aws_cloudwatch_metric_alarm" "scaleout_cpu_high" {
+  alarm_name          = "scaleout-cpu-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 70
+  alarm_description   = "Triggers scale-out when CPU utilization exceeds 70%"
+  dimensions = {
+    AutoScalingGroupName = var.autoscaling_group_name
+  }
+  alarm_actions = [module.asg.autoscaling_policy_arns["scale-out"]]
 }
 ```
 

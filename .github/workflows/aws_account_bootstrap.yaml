@@ -82,7 +82,7 @@ jobs:
             -var="environment=${{ github.event.inputs.environment }}" \
             -var="application=${{ github.event.inputs.application }}" \
             -var="aws_region=${{ github.event.inputs.region }}"
-          echo "::endgroup::
+          echo "::endgroup::"
   
   # Approval for terraform apply
   terraform-apply-approval-gate:

@@ -1,0 +1,55 @@
+name: Terraform AWS Infrastructure Dispatcher
+permissions:
+  contents: read
+  id-token: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Select Environment"
+        required: true
+        type: choice
+        options:
+          - sandbox
+          - dev
+          - test
+          - uat
+          - prod
+      application:
+        description: "Application Name"
+        required: true
+      region:
+        description: "AWS Region"
+        required: true
+        default: "eu-west-1"
+
+jobs:
+  print-input-summary:
+    name: Print User Input Summary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print Input Details
+        run: |
+          echo "----------------------------------------"
+          echo "Input Summary"
+          echo "----------------------------------------"
+          echo "Environment : ${{ github.event.inputs.environment }}"
+          echo "Application : ${{ github.event.inputs.application }}"
+          echo "Region      : ${{ github.event.inputs.region }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Workflow    : ${{ github.workflow }}"
+          echo "Repository  : ${{ github.repository }}"
+          echo "Run ID      : ${{ github.run_id }}"
+          echo "Run Number  : ${{ github.run_number }}"
+          echo "----------------------------------------"
+  
+  # Calling the reusable workflow for Terraform AWS Infrastructure Provisioning
+  call-terraform:
+    name: Run AWS Account Bootstrap Reusable Workflow
+    needs: print-input-summary
+    uses: ./.github/workflows/terraform-aws-infra-reusable.yml
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      application: ${{ github.event.inputs.application }}
+      region: ${{ github.event.inputs.region }}

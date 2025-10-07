@@ -367,8 +367,8 @@ resource "aws_autoscaling_group" "this" {
           standby_instances            = preferences.value.standby_instances
         }
       }
-      strategy = instance_refresh.value.strategy
-      triggers = instance_refresh.value.triggers
+      strategy = try(instance_refresh.value.strategy, null)
+      triggers = try(instance_refresh.value.triggers, null)
     }
   }
   dynamic "launch_template" {

@@ -1,4 +1,4 @@
-# terraform-aws-acm
+# tf-aws-module-acm
 
 Terraform module to provision an **AWS ACM (Certificate Manager)** certificate with optional **DNS or EMAIL validation**, including support for **Route 53-based DNS record automation** or manual EMAIL approval.
 
@@ -35,39 +35,31 @@ Terraform module to provision an **AWS ACM (Certificate Manager)** certificate w
 
 ```hcl
 module "acm" {
-  source = "../modules/acm"
-
+  source = "../../"
   domain_name     = "example.com"
   subject_alternative_names = ["www.example.com", "api.example.com"]
   validation_method = "DNS"
   hosted_zone_id  = "Z3P5QSUBK4POTI"
-
-  tags = {
-    Environment = "dev"
-    Project     = "my-app"
-  }
-
-  # Optional
-  create_certificate    = true
   validate_certificate  = true
   wait_for_validation   = true
   create_route53_records = true
   dns_ttl               = 60
   certificate_transparency_logging_preference = true
+  tags = {
+    Environment = "dev"
+    Project     = "my-app"
+  }
 }
 ```
 ### EMAIL Validation Example
 ```
 module "acm_email" {
-  source = "../modules/acm"
-
+  source = "../../"
   domain_name       = "example.com"
   validation_method = "EMAIL"
-
   create_certificate   = true
   validate_certificate = false  # Not needed for EMAIL
   wait_for_validation  = false  # Not needed for EMAIL
-
   tags = {
     Purpose = "email-validation"
   }

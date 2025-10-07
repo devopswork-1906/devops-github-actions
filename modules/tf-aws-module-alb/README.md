@@ -60,7 +60,6 @@ This is just a sample code. Please refer to example forlder for actual use case.
 
 ```hcl
 
-
 module "alb" {
   # Path to your ALB module
   source = "../../tf-aws-module-alb"
@@ -138,6 +137,67 @@ module "alb" {
 
 ### Network Load Balancer
 
+```hcl
+module "nlb" {
+  # Path to your NLB module
+  source = "../../tf-aws-module-alb"
+  # Ensures ACM certificates are created before NLB (For TLS listener only)
+  depends_on = [module.acm, module.additional_acm]
+  # Core NLB settings
+  name               = local.nlb_config.lb_name          # Unique NLB name (per environment)
+  load_balancer_type = var.nlb_config.load_balancer_type # "application" or "network"
+  internal           = var.nlb_config.internal           # true for internal NLB, false for internet-facing
+  #  subnets                                                      = data.aws_subnets.private.ids      # NLB subnets (use subnmet mapping block, if mapping needs to be configured)
+  subnet_mapping = [for i, eip in aws_eip.this :
+    {
+      allocation_id = eip.id
+      subnet_id     = data.aws_subnets.private.ids[i]
+    }
+  ]
+  enable_deletion_protection                                   = false # Disable deletion protection for testing
+  enforce_security_group_inbound_rules_on_private_link_traffic = "on"
+  # Security Group rules (for POC; in prod , we will be using SG module)
+  security_group_ingress_rules = var.nlb_config.security_group_ingress_rules
+  security_group_egress_rules  = var.nlb_config.security_group_egress_rules
+  # Connection tuning
+  client_keep_alive = 3600 # Seconds to keep connections alive
+  idle_timeout      = 3600 # Idle timeout in seconds
+  # Listeners
+  listeners = {
+    listener_1 = {
+      port     = 80
+      protocol = "TCP"
+      forward = {
+        target_group_key = "tg-1"
+      }
+    }
+  }
+  # Target Groups
+  target_groups = {
+    tg-1 = {
+      name                              = "${var.environment}-${var.application}-tg-1"
+      protocol                          = "TCP"
+      port                              = 80
+      target_type                       = "instance"
+      vpc_id                            = data.aws_vpc.selected.id
+      deregistration_delay              = 10
+      load_balancing_cross_zone_enabled = false
+      health_check = {
+        enabled             = true
+        interval            = 30
+        port                = "traffic-port"
+        healthy_threshold   = 3
+        unhealthy_threshold = 3
+        timeout             = 10
+        protocol            = "TCP"
+      }
+      target_id = aws_instance.server1.id
+    }
+  }
+  # Tags (merged from shared and resource-specific)
+  tags = var.tags["nlb_tags"]
+}
+```
 
 ## Inputs
 
