@@ -46,7 +46,7 @@ jobs:
   
   # Calling the reusable workflow for Terraform AWS Infrastructure Provisioning
   call-terraform:
-    name: Run AWS Account Bootstrap Reusable Workflow
+    name: Run Terraform AWS Infrastructure Reusable Workflow Workflow
     needs: print-input-summary
     uses: ./.github/workflows/terraform-aws-infra-reusable.yml
     with:
