@@ -1,0 +1,4 @@
+region = "us-east-2"
+bucket = "dev-ims-tf-statefiles"
+dynamodb_table = "dev-ims-tf-lock"
+key = "ims-infra.tfstate"

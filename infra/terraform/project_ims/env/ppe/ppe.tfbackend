@@ -1,0 +1,4 @@
+region = "eu-west-1"
+bucket = "ppe-ims-tf-statefiles"
+dynamodb_table = "ppe-ims-tf-lock"
+key = "ims-infra.tfstate"
