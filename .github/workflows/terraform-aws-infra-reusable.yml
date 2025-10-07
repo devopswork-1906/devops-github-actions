@@ -107,7 +107,7 @@ jobs:
             -var-file=env/${{ inputs.environment }}/${{ inputs.environment }}.tfvars \
             -var="environment=${{ inputs.environment }}" \
             -var="application=${{ inputs.application }}" \
-            -var="aws_region=${{ inputs.region }}"
+            -var="region=${{ inputs.region }}"
           echo "::endgroup::"
       - name: Post Apply Summary
         if: success()
