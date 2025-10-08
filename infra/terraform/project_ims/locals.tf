@@ -6,6 +6,7 @@ locals {
   vpc_name                = "${local.env}-${local.app}-vpc"
   alb_name                = "${local.env}-${local.app}-alb"
   alb_security_group_name = "${local.env}-${local.app}-alb-sg"
+  key_name                = "${local.env}${local.app}key"
   asg_config = merge(
     var.asg_config, {
       autoscaling_group_name      = "${local.env}-${local.app}-asg"
