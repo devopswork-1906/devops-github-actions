@@ -170,7 +170,7 @@ module "asg" {
   instance_name               = local.asg_config.instance_name
   instance_type               = var.asg_config.instance_type
   iam_instance_profile_name   = var.asg_config.iam_instance_profile_name
-  key_name                    = var.asg_config.key_name
+  key_name                    = module.keypair.key_pair_name
   security_groups             = [module.vpc.default_security_group_id]
   ebs_optimized               = true
   enable_monitoring           = true
